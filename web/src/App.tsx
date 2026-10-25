@@ -222,24 +222,24 @@ export const App: React.FC = () => {
         {activeTab === 'linter' && (
           <div className="space-y-6">
             {/* Input Selection Bar */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                  <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs w-full sm:w-auto">
                     <button
                       onClick={() => setInputMode('raw')}
-                      className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg font-medium transition-colors ${
+                      className={`flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
                         inputMode === 'raw'
                           ? 'bg-slate-800 text-white shadow-sm'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
                       <FileText className="w-3.5 h-3.5" />
-                      <span>Paste Manifest</span>
+                      <span>Paste Raw</span>
                     </button>
                     <button
                       onClick={() => setInputMode('url')}
-                      className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg font-medium transition-colors ${
+                      className={`flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
                         inputMode === 'url'
                           ? 'bg-slate-800 text-white shadow-sm'
                           : 'text-slate-400 hover:text-slate-200'
@@ -254,7 +254,7 @@ export const App: React.FC = () => {
                 <button
                   onClick={handleLintSubmit}
                   disabled={isLoading}
-                  className="flex items-center space-x-2 px-4 py-1.5 rounded-xl text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-white shadow-sm shadow-sky-500/20 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex items-center justify-center space-x-2 px-4 py-2 sm:py-1.5 rounded-xl text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-white shadow-sm shadow-sky-500/20 transition-colors disabled:opacity-50 cursor-pointer w-full sm:w-auto"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -293,37 +293,40 @@ export const App: React.FC = () => {
         {activeTab === 'mp4' && (
           <div className="space-y-6">
             {/* Top Toolbar: Switch Between Unoptimized & FastStart Sample or Upload */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-slate-400 font-medium">Sample Generator:</span>
-                <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-xs text-slate-400 font-medium shrink-0">Sample Fixtures:</span>
+                <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
                   <button
                     onClick={() => inspectMP4('unoptimized')}
-                    className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer text-center ${
                       activeMp4Sample === 'unoptimized'
                         ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    Unoptimized (moov at end)
+                    <span className="hidden sm:inline">Unoptimized (moov at end)</span>
+                    <span className="sm:hidden">Unoptimized</span>
                   </button>
                   <button
                     onClick={() => inspectMP4('faststart')}
-                    className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer text-center ${
                       activeMp4Sample === 'faststart'
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    Fast-Start Optimized
+                    <span className="hidden sm:inline">Fast-Start Optimized</span>
+                    <span className="sm:hidden">Fast-Start</span>
                   </button>
                 </div>
               </div>
 
               {/* Upload Local MP4 File */}
-              <label className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700/80 text-slate-200 border border-slate-700 cursor-pointer transition-colors">
+              <label className="flex items-center justify-center space-x-2 px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700/80 text-slate-200 border border-slate-700 cursor-pointer transition-colors shrink-0">
                 <Upload className="w-3.5 h-3.5 text-sky-400" />
-                <span>Upload Custom MP4</span>
+                <span className="hidden sm:inline">Upload Custom MP4</span>
+                <span className="sm:hidden">Upload MP4</span>
                 <input
                   type="file"
                   accept="video/mp4,video/quicktime"

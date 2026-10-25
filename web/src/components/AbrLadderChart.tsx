@@ -255,14 +255,14 @@ export const AbrLadderChart: React.FC<AbrLadderChartProps> = ({ initialAnalysis,
   return (
     <div className="space-y-6">
       {/* Top Health Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3.5">
-          <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30">
-            <TrendingUp className="w-6 h-6" />
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center space-x-3.5">
+          <div className="p-2.5 sm:p-3 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 shrink-0 mt-0.5 sm:mt-0">
+            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <div className="flex items-center space-x-2.5">
-              <h3 className="text-base font-semibold text-white">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm sm:text-base font-semibold text-white">
                 ABR Bitrate Ladder & BPP Quality Engine
               </h3>
               <span
@@ -285,11 +285,11 @@ export const AbrLadderChart: React.FC<AbrLadderChartProps> = ({ initialAnalysis,
         </div>
 
         {/* Sub-view Switcher & Action */}
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+          <div className="grid grid-cols-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs text-center">
             <button
               onClick={() => setActiveSubTab('ladder')}
-              className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
                 activeSubTab === 'ladder'
                   ? 'bg-slate-800 text-white'
                   : 'text-slate-400 hover:text-slate-200'
@@ -302,19 +302,19 @@ export const AbrLadderChart: React.FC<AbrLadderChartProps> = ({ initialAnalysis,
                 setActiveSubTab('alignment')
                 if (!alignmentMatrix) handleRunAlignmentAudit()
               }}
-              className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
                 activeSubTab === 'alignment'
                   ? 'bg-slate-800 text-white'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Variant Alignment Diff
+              Alignment Diff
             </button>
           </div>
 
           <button
             onClick={handleAddRung}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 border border-sky-500/30 transition-colors shrink-0"
+            className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 border border-sky-500/30 transition-colors shrink-0 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Tier</span>

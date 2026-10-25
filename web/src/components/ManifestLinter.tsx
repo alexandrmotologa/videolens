@@ -143,32 +143,32 @@ export const ManifestLinter: React.FC<ManifestLinterProps> = ({ result, onInspec
   return (
     <div className="space-y-6">
       {/* Top Action Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 gap-3">
         <div className="flex items-center space-x-2.5">
           <span className="text-xs font-semibold text-white">Diagnostics & Remediations</span>
           {result.isLowLatency && (
             <span className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              <Zap className="w-3.5 h-3.5" />
+              <Zap className="w-3.5 h-3.5 shrink-0" />
               <span>LL-HLS Active</span>
             </span>
           )}
         </div>
 
-        <div className="flex items-center space-x-2.5 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           {/* Export Report Buttons */}
           <button
             onClick={handleExportJSON}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+            className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
           >
-            <FileDown className="w-3.5 h-3.5 text-sky-400" />
+            <FileDown className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>Export JSON</span>
           </button>
 
           <button
             onClick={handleExportMarkdown}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+            className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
           >
-            <FileDown className="w-3.5 h-3.5 text-indigo-400" />
+            <FileDown className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
             <span>Export MD</span>
           </button>
 
@@ -177,10 +177,10 @@ export const ManifestLinter: React.FC<ManifestLinterProps> = ({ result, onInspec
             <button
               onClick={handleAutoFix}
               disabled={isFixing}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-sm shadow-sky-500/20 transition-all cursor-pointer"
+              className="col-span-2 sm:col-span-1 inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-sm shadow-sky-500/20 transition-all cursor-pointer"
             >
-              <Wrench className="w-3.5 h-3.5" />
-              <span>{isFixing ? 'Sanitizing...' : '1-Click Auto-Fix M3U8'}</span>
+              <Wrench className="w-3.5 h-3.5 shrink-0" />
+              <span>{isFixing ? 'Sanitizing...' : '1-Click Auto-Fix'}</span>
             </button>
           )}
         </div>

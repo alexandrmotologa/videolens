@@ -341,30 +341,30 @@ export const PlayerSandbox: React.FC<PlayerSandboxProps> = ({
       />
 
       {/* CDN Chaos Testing / Failover Simulator */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-xl transition-colors ${cdnChaosEnabled ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400'}`}>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-start space-x-3">
+          <div className={`p-2 rounded-xl transition-colors shrink-0 mt-0.5 ${cdnChaosEnabled ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400'}`}>
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-slate-200 flex items-center space-x-2">
-              <span>CDN Chaos & HTTP 503 Failover Simulation</span>
+            <div className="text-xs font-semibold text-slate-200 flex flex-wrap items-center gap-2">
+              <span>CDN Chaos & Failover Simulator</span>
               {cdnChaosEnabled && (
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono">
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono font-bold">
                   ACTIVE
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
-              Injects HTTP 503 Service Unavailable into 25% of media chunk fetches to test player retry backoff and redundant failover
+            <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Injects HTTP 503 into 25% of chunk fetches to verify player retry backoff and redundancy failover
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 w-full sm:w-auto justify-end shrink-0">
+        <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
           {chaosInjectedCount > 0 && (
-            <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
-              {chaosInjectedCount} errors injected
+            <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg shrink-0">
+              {chaosInjectedCount} dropped
             </span>
           )}
           <button
@@ -378,13 +378,13 @@ export const PlayerSandbox: React.FC<PlayerSandboxProps> = ({
                 next ? 'warning' : 'info'
               )
             }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+            className={`w-full sm:w-auto px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors text-center shrink-0 ${
               cdnChaosEnabled
                 ? 'bg-amber-500 hover:bg-amber-400 text-black font-semibold shadow-sm shadow-amber-500/20'
                 : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
             }`}
           >
-            {cdnChaosEnabled ? 'Disable Chaos Test' : 'Enable Chaos Test'}
+            {cdnChaosEnabled ? 'Disable Chaos' : 'Enable Chaos Test'}
           </button>
         </div>
       </div>

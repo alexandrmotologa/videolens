@@ -216,14 +216,14 @@ export const AtomTreeView: React.FC<AtomTreeViewProps> = ({ profile, onRemediate
           </p>
 
           {/* Interactive GOP Intervals Strip */}
-          <div className="flex items-center space-x-1.5 overflow-x-auto pt-2 pb-1">
+          <div className="flex items-center space-x-2 overflow-x-auto pt-2 pb-1.5 scrollbar-thin">
             {videoTrack.gop.intervals.map((gop) => {
               const isSelected = selectedGOP === gop
               return (
                 <button
                   key={gop.index}
                   onClick={() => setSelectedGOP(gop)}
-                  className={`flex-1 min-w-[70px] p-2 rounded-xl text-center border transition-all ${
+                  className={`shrink-0 w-20 p-2.5 rounded-xl text-center border transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-sky-500/20 border-sky-400 ring-2 ring-sky-500/40 text-white'
                       : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
@@ -242,10 +242,10 @@ export const AtomTreeView: React.FC<AtomTreeViewProps> = ({ profile, onRemediate
           </div>
 
           {selectedGOP && (
-            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-center justify-between font-mono">
-              <span>GOP #{selectedGOP.index} Selected:</span>
-              <span>Starts at frame {selectedGOP.startFrame} (~{selectedGOP.startSeconds.toFixed(2)}s)</span>
-              <span className="text-sky-400">Span: {selectedGOP.durationSeconds.toFixed(3)}s</span>
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 font-mono">
+              <span className="font-semibold text-white">GOP #{selectedGOP.index} Selected</span>
+              <span>Start: Frame {selectedGOP.startFrame} (~{selectedGOP.startSeconds.toFixed(2)}s)</span>
+              <span className="text-sky-400 font-bold">Span: {selectedGOP.durationSeconds.toFixed(3)}s</span>
             </div>
           )}
         </div>
