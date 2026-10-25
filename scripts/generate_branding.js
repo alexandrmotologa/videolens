@@ -1,0 +1,240 @@
+const fs = require('fs');
+const path = require('path');
+const { Resvg } = require(path.join(__dirname, '..', 'web', 'node_modules', '@resvg/resvg-js'));
+
+function buildLogoSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <linearGradient id="cyan-bright" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#00f5ff"/>
+    </linearGradient>
+
+    <linearGradient id="amber-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+
+    <linearGradient id="slate-crest" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <linearGradient id="slate-facet-l" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+
+    <linearGradient id="slate-facet-r" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="slate-base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway Frame -->
+      <polygon points="
+        0,-390
+        338,-195
+        338,195
+        0,390
+        -338,195
+        -338,-195
+      " fill="none" stroke="#0f172a" stroke-width="40" stroke-linejoin="round" />
+
+      <!-- Inner Precision Telemetry Ring (Cyan dashed) -->
+      <polygon points="
+        0,-355
+        307,-177
+        307,177
+        0,355
+        -307,177
+        -307,-177
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.45" stroke-dasharray="16, 12" />
+
+      <!-- Corner Diagnostic Target Reticles -->
+      <circle cx="0" cy="-390" r="8" fill="#00f5ff" />
+      <circle cx="338" cy="-195" r="8" fill="#00f5ff" />
+      <circle cx="338" cy="195" r="8" fill="#00f5ff" />
+      <circle cx="0" cy="390" r="8" fill="#00f5ff" />
+      <circle cx="-338" cy="195" r="8" fill="#00f5ff" />
+      <circle cx="-338" cy="-195" r="8" fill="#00f5ff" />
+
+      <!-- ============================================================ -->
+      <!-- THE OPTICAL FALCON (MASCOT SILHOUETTE & VOLUMETRIC LOW-POLY)  -->
+      <!-- ============================================================ -->
+
+      <!-- 100% Watertight Solid Base Silhouette -->
+      <path d="
+        M 0 -290
+        L 75 -245 L 140 -270 L 125 -195 L 205 -150 L 235 -60 L 260 40 L 240 160 L 190 250 L 110 310 L 0 335
+        L -110 310 L -190 250 L -240 160 L -260 40 L -235 -60 L -205 -150 L -125 -195 L -140 -270 L -75 -245
+        Z
+      " fill="#0b0f19" />
+
+      <!-- Outer Mantle Wings / Shoulder Armor -->
+      <!-- Left Shoulder Facets -->
+      <polygon points="-205,-150 -235,-60 -160,-20 -130,-110" fill="#1e293b" />
+      <polygon points="-235,-60 -260,40 -175,70 -160,-20" fill="#0f172a" />
+      <polygon points="-260,40 -240,160 -150,160 -175,70" fill="#1e293b" />
+      <polygon points="-240,160 -190,250 -110,210 -150,160" fill="#0f172a" />
+      <polygon points="-190,250 -110,310 -60,260 -110,210" fill="#1e293b" />
+      <polygon points="-110,310 0,335 0,270 -60,260" fill="#0f172a" />
+
+      <!-- Right Shoulder Facets -->
+      <polygon points="205,-150 235,-60 160,-20 130,-110" fill="#334155" />
+      <polygon points="235,-60 260,40 175,70 160,-20" fill="#1e293b" />
+      <polygon points="260,40 240,160 150,160 175,70" fill="#334155" />
+      <polygon points="240,160 190,250 110,210 150,160" fill="#1e293b" />
+      <polygon points="190,250 110,310 60,260 110,210" fill="#334155" />
+      <polygon points="110,310 0,335 0,270 60,260" fill="#1e293b" />
+
+      <!-- Crown & Crest Plumes (Aerodynamic Falcon Crown) -->
+      <polygon points="0,-290 -75,-245 0,-215" fill="#334155" />
+      <polygon points="0,-290 75,-245 0,-215" fill="#475569" />
+      <polygon points="-75,-245 -140,-270 -125,-195 -60,-175" fill="#1e293b" />
+      <polygon points="75,-245 140,-270 125,-195 60,-175" fill="#334155" />
+      <polygon points="0,-215 -60,-175 0,-145" fill="#334155" />
+      <polygon points="0,-215 60,-175 0,-145" fill="#475569" />
+      <polygon points="-60,-175 -125,-195 -130,-110 -65,-120" fill="#1e293b" />
+      <polygon points="60,-175 125,-195 130,-110 65,-120" fill="#334155" />
+
+      <!-- Forehead & Superciliary Brow (Focused Gaze) -->
+      <polygon points="0,-145 -65,-120 0,-90" fill="#334155" />
+      <polygon points="0,-145 65,-120 0,-90" fill="#64748b" />
+      <polygon points="-65,-120 -130,-110 -115,-70 -50,-80" fill="#0f172a" />
+      <polygon points="65,-120 130,-110 115,-70 50,-80" fill="#334155" />
+
+      <!-- Predatory Eye Sockets (Angled Almond Geometry) -->
+      <!-- Left Eye Cavity & Optic -->
+      <polygon points="-115,-70 -50,-80 -60,-40 -125,-35" fill="#090d16" />
+      <polygon points="-108,-65 -58,-74 -68,-46 -116,-43" fill="url(#cyan-glow)" />
+      <!-- Left Slit Pupil & Lens Specular -->
+      <polygon points="-88,-70 -80,-69 -83,-50 -91,-51" fill="#04121e" />
+      <circle cx="-95" cy="-62" r="3.5" fill="#ffffff" />
+
+      <!-- Right Eye Cavity & Optic -->
+      <polygon points="115,-70 50,-80 60,-40 125,-35" fill="#090d16" />
+      <polygon points="108,-65 58,-74 68,-46 116,-43" fill="url(#cyan-glow)" />
+      <!-- Right Slit Pupil & Lens Specular -->
+      <polygon points="88,-70 80,-69 83,-50 91,-51" fill="#04121e" />
+      <circle cx="95" cy="-62" r="3.5" fill="#ffffff" />
+
+      <!-- Falcon Malar Cheek Facets (Integrated Low-Poly, NO Pipe Lines) -->
+      <polygon points="-125,-35 -60,-40 -70,25 -140,15" fill="#1e293b" />
+      <polygon points="125,-35 60,-40 70,25 140,15" fill="#334155" />
+      <polygon points="-140,15 -70,25 -80,95 -155,75" fill="#0f172a" />
+      <polygon points="140,15 70,25 80,95 155,75" fill="#1e293b" />
+
+      <!-- Hooked Predatory Beak (Proportional Raptor Apex) -->
+      <!-- Upper Beak Bridge -->
+      <polygon points="0,-90 -50,-80 -35,-25 0,-15" fill="#334155" />
+      <polygon points="0,-90 50,-80 35,-25 0,-15" fill="#475569" />
+      <!-- Beak Core & Hook -->
+      <polygon points="0,-15 -35,-25 -28,30 0,65" fill="#0f172a" />
+      <polygon points="0,-15 35,-25 28,30 0,65" fill="#1e293b" />
+      <!-- Beak Amber Tip Highlight -->
+      <polygon points="0,20 -15,35 0,65" fill="url(#amber-accent)" />
+      <polygon points="0,20 15,35 0,65" fill="#f59e0b" />
+
+      <!-- Throat & Chin Facets -->
+      <polygon points="0,65 -28,30 -60,80 0,115" fill="#1e293b" />
+      <polygon points="0,65 28,30 60,80 0,115" fill="#334155" />
+
+      <!-- ============================================================ -->
+      <!-- CHEST OPTICAL LENS & CONCENTRIC APERTURE TELEMETRY CORE       -->
+      <!-- ============================================================ -->
+      <!-- Outer Lens Bezel -->
+      <circle cx="0" cy="180" r="72" fill="#0b0f19" stroke="#334155" stroke-width="4" />
+      <circle cx="0" cy="180" r="64" fill="none" stroke="#00f5ff" stroke-width="2.5" stroke-dasharray="6, 5" opacity="0.7" />
+
+      <!-- Hexagonal Optical Aperture Blades -->
+      <polygon points="
+        0,122
+        50,151
+        50,209
+        0,238
+        -50,209
+        -50,151
+      " fill="#0f172a" stroke="#00f5ff" stroke-width="3" />
+
+      <!-- Aperture Focus Core & Diagnostic Playhead -->
+      <polygon points="
+        0,138
+        36,159
+        36,201
+        0,222
+        -36,201
+        -36,159
+      " fill="#1e293b" />
+
+      <!-- Electric Cyan Playhead Icon in Center of Lens -->
+      <polygon points="-12,162 18,180 -12,198" fill="url(#cyan-bright)" />
+
+      <!-- Optical Reticle Tick Marks (Subtle Diagnostic Crosshairs) -->
+      <line x1="0" y1="112" x2="0" y2="120" stroke="#00f5ff" stroke-width="3" stroke-linecap="round" />
+      <line x1="0" y1="240" x2="0" y2="248" stroke="#00f5ff" stroke-width="3" stroke-linecap="round" />
+      <line x1="-68" y1="180" x2="-60" y2="180" stroke="#00f5ff" stroke-width="3" stroke-linecap="round" />
+      <line x1="60" y1="180" x2="68" y2="180" stroke="#00f5ff" stroke-width="3" stroke-linecap="round" />
+
+    </g>
+  </g>
+</svg>`;
+}
+
+async function run() {
+  const outputDir = path.join(__dirname, '..', 'docs', 'images');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const svg = buildLogoSvg();
+  const svgPath = path.join(outputDir, 'logo.svg');
+  const pngPath = path.join(outputDir, 'logo.png');
+
+  fs.writeFileSync(svgPath, svg, 'utf8');
+
+  // Copy also to web/public/logo.svg and internal/server/dist/logo.svg
+  const webPublicLogo = path.join(__dirname, '..', 'web', 'public', 'logo.svg');
+  fs.writeFileSync(webPublicLogo, svg, 'utf8');
+  const distLogo = path.join(__dirname, '..', 'internal', 'server', 'dist', 'logo.svg');
+  if (fs.existsSync(path.dirname(distLogo))) {
+    fs.writeFileSync(distLogo, svg, 'utf8');
+  }
+
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: 'width', value: 1024 },
+  });
+  const pngData = resvg.render().asPng();
+  fs.writeFileSync(pngPath, pngData);
+
+  console.log('✓ Successfully rendered official developer-branding logo.svg and logo.png at 1024x1024');
+}
+
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

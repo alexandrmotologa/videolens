@@ -69,11 +69,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Right Controls: Sample Selector & Health Badge */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1.5 sm:space-x-3">
             {/* Quick Sample Selector */}
             <div className="relative group">
-              <button className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700/80 transition-colors">
-                <span>Load Sample</span>
+              <button className="flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700/80 transition-colors">
+                <span className="hidden sm:inline">Load Sample</span>
+                <span className="sm:hidden">Samples</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               <div className="absolute right-0 mt-2 w-64 rounded-xl bg-slate-900 border border-slate-700 shadow-xl py-1 hidden group-hover:block z-50">
@@ -96,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Health Score Pill */}
             {typeof healthScore === 'number' && (
               <div
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold border ${
                   healthScore >= 90
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                     : healthScore >= 70
@@ -111,7 +112,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ) : (
                   <XCircle className="w-3.5 h-3.5" />
                 )}
-                <span>Score: {healthScore}/100</span>
+                <span className="hidden sm:inline">Score: </span>
+                <span>{healthScore}</span>
+                <span className="hidden sm:inline">/100</span>
               </div>
             )}
           </div>

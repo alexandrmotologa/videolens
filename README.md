@@ -1,23 +1,35 @@
-<div align="center">
+<p align="center">
+  <img src="docs/images/logo.png?raw=true" alt="VideoLens Logo" width="130" style="border-radius: 24px;" />
+</p>
 
-<img src="docs/images/logo.svg" alt="VideoLens Logo" width="104" height="104"/>
+<h1 align="center">VideoLens</h1>
 
-# VideoLens
+<p align="center">
+  <b>Streaming media diagnostics workbench, binary ISO MP4 box profiler, and ABR ladder validator</b>
+</p>
 
-**Streaming media diagnostics workbench, binary ISO MP4 box profiler, and ABR ladder validator**
-
-[![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![React Version](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react)](https://react.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub Topics](https://img.shields.io/github/topics/alexandrmotologa/videolens?color=blue)](https://github.com/alexandrmotologa/videolens)
-
-</div>
+<p align="center">
+  <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go" alt="Go Version"/></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react" alt="React Version"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/></a>
+  <a href="https://github.com/alexandrmotologa/videolens"><img src="https://img.shields.io/github/topics/alexandrmotologa/videolens?color=blue" alt="GitHub Topics"/></a>
+</p>
 
 VideoLens inspects HLS and MPEG-DASH streaming manifests, parses binary ISO Base Media File Format (ISOBMFF / MP4) atom trees, evaluates Fast-Start web streaming readiness with automatic offset remuxing, audits ABR bitrate ladders using Bits Per Pixel (BPP) calculations, and simulates adaptive player buffering under network throttling.
 
 <div align="center">
-  <img src="docs/images/videolens_demo.gif" alt="VideoLens Terminal and Studio Demo" width="100%"/>
+  <img src="docs/images/videolens_demo.gif" alt="VideoLens Animated Demo" width="100%"/>
 </div>
+
+### Interface Walkthrough
+
+| Manifest Linter & RFC 8216 Validator | Binary MP4 Box Profiler & GOP Filmstrip |
+|:---:|:---:|
+| <img src="docs/images/videolens-1.png" width="100%" alt="Manifest Linter"/> | <img src="docs/images/videolens-2.png" width="100%" alt="MP4 Box Profiler"/> |
+
+| ABR Bitrate Ladder & Variant Alignment | Player Sandbox & Buffer Throttler |
+|:---:|:---:|
+| <img src="docs/images/videolens-3.png" width="100%" alt="ABR Ladder & Compatibility"/> | <img src="docs/images/videolens-4.png" width="100%" alt="Player Sandbox & Throttle Simulator"/> |
 
 ---
 
