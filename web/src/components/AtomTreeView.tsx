@@ -1,6 +1,20 @@
 import React, { useState } from 'react'
-import { BoxNode, MP4Profile, TrackSummary } from '../types/media'
-import { ChevronRight, ChevronDown, Box, Film, Music, Info, Layers, Search, FileDown } from 'lucide-react'
+import { BoxNode, MP4Profile, TrackSummary, GOPInterval } from '../types/media'
+import {
+  ChevronRight,
+  ChevronDown,
+  Box,
+  Film,
+  Music,
+  Info,
+  Layers,
+  Search,
+  FileDown,
+  Activity,
+  Sparkles,
+  AlertTriangle,
+  Clock,
+} from 'lucide-react'
 
 interface AtomTreeViewProps {
   profile: MP4Profile
@@ -14,6 +28,7 @@ export const AtomTreeView: React.FC<AtomTreeViewProps> = ({ profile, onRemediate
     '0-moov': true,
     '0-moov-1-trak': true,
   })
+  const [selectedGOP, setSelectedGOP] = useState<GOPInterval | null>(null)
 
   const toggleExpand = (key: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -34,6 +49,12 @@ export const AtomTreeView: React.FC<AtomTreeViewProps> = ({ profile, onRemediate
         return 'bg-sky-500/15 text-sky-400 border-sky-500/30'
       case 'mdat':
         return 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+      case 'moof':
+      case 'traf':
+      case 'trun':
+      case 'tfdt':
+      case 'sidx':
+        return 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30'
       case 'free':
       case 'skip':
         return 'bg-slate-500/15 text-slate-400 border-slate-500/30'
@@ -42,12 +63,13 @@ export const AtomTreeView: React.FC<AtomTreeViewProps> = ({ profile, onRemediate
     }
   }
 
+  const videoTrack = profile.tracks.find((t) => t.type === 'video')
+
   const renderTree = (node: BoxNode, path: string, depth = 0) => {
     const hasChildren = node.children && node.children.length > 0
     const isExpanded = expandedKeys[path] || search !== ''
     const isSelected = selectedBox === node
 
-    // Search filter
     const matchesSearch =
       search === '' ||
       node.type.toLowerCase().includes(search.toLowerCase()) ||
@@ -164,6 +186,71 @@ export const AtomTreeView: React.FC<AtomTreeViewProps> = ({ profile, onRemediate
         ))}
       </div>
 
+      {/* Visual GOP (Group of Pictures) & Keyframe Cadence Filmstrip */}
+      {videoTrack?.gop && videoTrack.gop.intervals.length > 0 && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center space-x-2.5">
+              <Activity className="w-4 h-4 text-sky-400" />
+              <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+                GOP Keyframe Cadence Visualizer
+              </h4>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                  videoTrack.gop.isFixedGOP
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                }`}
+              >
+                {videoTrack.gop.cadenceType} GOP (~{videoTrack.gop.meanGOPDuration.toFixed(2)}s)
+              </span>
+            </div>
+
+            <div className="text-xs text-slate-400 font-mono">
+              {videoTrack.gop.totalKeyframes} Keyframes | Min: {videoTrack.gop.minGOPDuration.toFixed(2)}s | Max: {videoTrack.gop.maxGOPDuration.toFixed(2)}s
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400 leading-relaxed">
+            {videoTrack.gop.recommendation}
+          </p>
+
+          {/* Interactive GOP Intervals Strip */}
+          <div className="flex items-center space-x-1.5 overflow-x-auto pt-2 pb-1">
+            {videoTrack.gop.intervals.map((gop) => {
+              const isSelected = selectedGOP === gop
+              return (
+                <button
+                  key={gop.index}
+                  onClick={() => setSelectedGOP(gop)}
+                  className={`flex-1 min-w-[70px] p-2 rounded-xl text-center border transition-all ${
+                    isSelected
+                      ? 'bg-sky-500/20 border-sky-400 ring-2 ring-sky-500/40 text-white'
+                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="text-[10px] text-slate-500 font-mono">GOP #{gop.index}</div>
+                  <div className="text-xs font-bold font-mono text-sky-400 mt-0.5">
+                    {gop.durationSeconds.toFixed(2)}s
+                  </div>
+                  <div className="text-[9px] text-slate-400 mt-0.5">
+                    {gop.durationFrames} frames
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {selectedGOP && (
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-center justify-between font-mono">
+              <span>GOP #{selectedGOP.index} Selected:</span>
+              <span>Starts at frame {selectedGOP.startFrame} (~{selectedGOP.startSeconds.toFixed(2)}s)</span>
+              <span className="text-sky-400">Span: {selectedGOP.durationSeconds.toFixed(3)}s</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main Split View: Atom Tree (Left) vs Atom Inspector (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Tree Column */}
@@ -276,10 +363,12 @@ export const AtomTreeView: React.FC<AtomTreeViewProps> = ({ profile, onRemediate
                   '32-bit chunk offset table. For Fast-Start remediation, all offsets inside stco are shifted forward by moov size.'}
                 {selectedBox.type === 'stss' &&
                   'Sync sample table specifying keyframe (IDR) indexes for random access and ABR variant switching.'}
-                {selectedBox.type === 'ftyp' &&
-                  'File type and compatibility box defining major brand and compliant decoders.'}
-                {!['moov', 'mdat', 'trak', 'stbl', 'stco', 'stss', 'ftyp'].includes(selectedBox.type) &&
-                  'ISOBMFF box defining codec parameters or streaming indexes.'}
+                {selectedBox.type === 'moof' &&
+                  'Movie fragment container (CMAF / fMP4) defining independent streaming chunk headers.'}
+                {selectedBox.type === 'tfdt' &&
+                  'Track fragment decode time box specifying the exact presentation timestamp of this media chunk.'}
+                {selectedBox.type === 'sidx' &&
+                  'Segment index box allowing subsegment seekability and random access indexing in DASH & CMAF streams.'}
               </div>
             </div>
           ) : (

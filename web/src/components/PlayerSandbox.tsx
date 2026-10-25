@@ -40,11 +40,16 @@ export const PlayerSandbox: React.FC<PlayerSandboxProps> = ({
   const [eventLogs, setEventLogs] = useState<{ time: string; text: string; type: string }[]>([])
 
   const [throttleConfig, setThrottleConfig] = useState<ThrottleConfig>(THROTTLE_PRESETS[0])
+  const [cdnChaosEnabled, setCdnChaosEnabled] = useState(false)
+  const [chaosInjectedCount, setChaosInjectedCount] = useState(0)
 
-  // Refs for tracking stall durations
+  // Refs for tracking stall durations and live settings in loader
   const stallStartRef = useRef<number | null>(null)
   const throttleRef = useRef<ThrottleConfig>(throttleConfig)
   throttleRef.current = throttleConfig
+  const cdnChaosRef = useRef(false)
+  cdnChaosRef.current = cdnChaosEnabled
+  const fragCountRef = useRef(0)
 
   const addLog = (text: string, type = 'info') => {
     const time = new Date().toLocaleTimeString()
@@ -65,23 +70,48 @@ export const PlayerSandbox: React.FC<PlayerSandboxProps> = ({
     setStallDurationSec(0)
     setDroppedFrames(0)
     setForwardBuffer(0)
+    setChaosInjectedCount(0)
+    fragCountRef.current = 0
     addLog(`Loading stream: ${url}`, 'info')
 
     // Check HLS support
     if (Hls.isSupported()) {
-      // Custom Hls.js configuration with custom fragment loader for network throttling
+      // Custom Hls.js configuration with custom fragment loader for network throttling and jitter
       class ThrottledLoader extends Hls.DefaultConfig.loader {
         load(context: any, config: any, callbacks: any) {
           const cfg = throttleRef.current
           const startTime = performance.now()
 
           const originalOnSuccess = callbacks.onSuccess
+          const originalOnError = callbacks.onError
+
+          // Calculate base latency plus random jitter
+          let artificialDelayMs = cfg.latencyMs
+          if (cfg.jitterMs && cfg.jitterMs > 0) {
+            const jitter = Math.round((Math.random() * 2 - 1) * cfg.jitterMs)
+            artificialDelayMs = Math.max(0, artificialDelayMs + jitter)
+          }
+
+          // CDN Chaos Failover simulation: inject HTTP 503 error on every 4th segment
+          if (cdnChaosRef.current && (context.type === 'segment' || context.type === 'part' || context.frag)) {
+            fragCountRef.current++
+            if (fragCountRef.current % 4 === 0) {
+              setChaosInjectedCount((c) => c + 1)
+              addLog(`[CDN Chaos] Injected HTTP 503 Service Unavailable on segment #${fragCountRef.current} - Testing Hls.js auto-retry`, 'error')
+              setTimeout(() => {
+                if (originalOnError) {
+                  originalOnError({ code: 503, text: 'Simulated 503 Service Unavailable' }, context, {})
+                }
+              }, Math.max(30, artificialDelayMs))
+              return
+            }
+          }
+
           callbacks.onSuccess = (response: any, stats: any, ctx: any, networkDetails: any) => {
             const dataLen = response.data ? (response.data.byteLength || response.data.length || 0) : 0
             const elapsedMs = performance.now() - startTime
 
             // Calculate simulated bandwidth delay if throttling enabled
-            let artificialDelayMs = cfg.latencyMs
             if (cfg.bandwidthKbps > 0 && dataLen > 0) {
               const targetBps = (cfg.bandwidthKbps * 1000) / 8
               const expectedTimeMs = (dataLen / targetBps) * 1000
@@ -309,6 +339,55 @@ export const PlayerSandbox: React.FC<PlayerSandboxProps> = ({
           addLog(`Network throttler updated: ${cfg.label}`, 'warning')
         }}
       />
+
+      {/* CDN Chaos Testing / Failover Simulator */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center space-x-3">
+          <div className={`p-2 rounded-xl transition-colors ${cdnChaosEnabled ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400'}`}>
+            <Zap className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-slate-200 flex items-center space-x-2">
+              <span>CDN Chaos & HTTP 503 Failover Simulation</span>
+              {cdnChaosEnabled && (
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono">
+                  ACTIVE
+                </span>
+              )}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              Injects HTTP 503 Service Unavailable into 25% of media chunk fetches to test player retry backoff and redundant failover
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3 w-full sm:w-auto justify-end shrink-0">
+          {chaosInjectedCount > 0 && (
+            <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
+              {chaosInjectedCount} errors injected
+            </span>
+          )}
+          <button
+            onClick={() => {
+              const next = !cdnChaosEnabled
+              setCdnChaosEnabled(next)
+              addLog(
+                next
+                  ? 'CDN Chaos Simulation enabled (injecting HTTP 503 on 25% of fragments)'
+                  : 'CDN Chaos Simulation disabled',
+                next ? 'warning' : 'info'
+              )
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+              cdnChaosEnabled
+                ? 'bg-amber-500 hover:bg-amber-400 text-black font-semibold shadow-sm shadow-amber-500/20'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+            }`}
+          >
+            {cdnChaosEnabled ? 'Disable Chaos Test' : 'Enable Chaos Test'}
+          </button>
+        </div>
+      </div>
 
       {/* Main Video View & Telemetry Gauges */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

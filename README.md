@@ -35,7 +35,9 @@ VideoLens inspects HLS and MPEG-DASH streaming manifests, parses binary ISO Base
 - Audits segment duration drift: flags variance and standard deviation across segment durations.
 - Validates `#EXT-X-TARGETDURATION`: flags segments exceeding target duration thresholds.
 - Audits continuity tags: identifies missing `#EXT-X-DISCONTINUITY` markers across codec, timeline, or sequence changes.
+- Validates Low-Latency HLS (LL-HLS) playlists: parses `#EXT-X-PART`, `#EXT-X-PART-INF`, `#EXT-X-SERVER-CONTROL`, and `#EXT-X-PRELOAD-HINT` tags.
 - Parses MPEG-DASH `.mpd` XML manifests: inspects `Period`, `AdaptationSet`, `Representation`, and `SegmentTemplate` structures.
+- 1-Click M3U8 auto-fixer: corrects target duration mismatches, inserts missing `#EXT-X-ENDLIST` tags on VOD, normalizes floating-point drift, and exports clean playlists.
 
 ### 3. ABR Bitrate Ladder Validator
 - Calculates Bits Per Pixel:
@@ -43,13 +45,17 @@ VideoLens inspects HLS and MPEG-DASH streaming manifests, parses binary ISO Base
 - Evaluates codec efficiency against established BPP ranges for H.264, HEVC/VP9, and AV1.
 - Analyzes step ratios between adjacent rungs (optimal 1.5x to 2.0x, flagging harsh jumps greater than 2.5x or redundant tiers under 1.3x).
 - Detects inverted ladders where higher resolutions receive lower bitrates.
+- Cross-variant alignment matrix: audits keyframe presentation timestamps (PTS) across variant tracks to prevent playback stalls during ABR switches.
+- Hardware compatibility matrix: inspects H.264 profile and level constraints across Apple iOS, Android, Smart TVs, Roku, and desktop web.
 - Computes an aggregate ABR Health Score (0 to 100) with remediation suggestions.
 
 ### 4. Player Sandbox and Network Throttle Simulator
 - Embeds an Hls.js playback sandbox with forward buffer health telemetry.
 - Tracks buffer length in seconds ($t_{\text{buffer}} = \text{buffered.end} - \text{currentTime}$).
 - Logs rebuffering stalls, stall durations, and dropped frames.
-- Built-in bandwidth throttle presets: Fiber (25 Mbps), 4G LTE (8 Mbps), 3G Fast (1.5 Mbps), 3G Slow (500 Kbps), Edge (150 Kbps), and a dynamic "Tunnel Drop" simulator.
+- Built-in bandwidth throttle presets: 5G Sub-6 C-Band (45 Mbps), Fiber (25 Mbps), Starlink Satellite (15 Mbps with 30ms jitter), 4G LTE, 3G, and Edge.
+- Jitter and latency injector: simulates variable network delay up to 150ms.
+- CDN Chaos and failover testing: periodically injects HTTP 503 Service Unavailable into chunk downloads to test player retry backoff and redundancy failover.
 
 ---
 
@@ -125,6 +131,17 @@ Open `http://localhost:8850` in your browser.
 videolens check https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
 ```
 
+Inspect with structured JSON output or Markdown reporting for CI/CD pipelines:
+```bash
+videolens check --format json --fail-on error input.m3u8
+videolens check --format markdown manifest.mpd
+```
+
+### Auto-Repair Malformed HLS Playlist
+```bash
+videolens fix broken.m3u8 -o compliant.m3u8
+```
+
 ### Inspect Local or Remote MP4 File
 ```bash
 videolens check input.mp4
@@ -147,10 +164,12 @@ videolens abr https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/hls/lint` | `POST` | Validates raw or remote M3U8 playlist against RFC 8216 rules |
+| `/api/hls/fix` | `POST` | Automatically repairs malformed M3U8 playlists and normalizes durations |
 | `/api/dash/lint` | `POST` | Validates raw or remote MPEG-DASH `.mpd` manifest |
 | `/api/mp4/inspect` | `POST` | Parses binary ISO MP4 atom tree and Fast-Start status |
 | `/api/mp4/remediate` | `POST` | Remuxes uploaded MP4 file to Fast-Start (`moov` before `mdat`) |
 | `/api/ladder/analyze` | `POST` | Calculates BPP and step ratios from variant stream definitions |
+| `/api/ladder/align` | `POST` | Compares segment boundary and PTS keyframe drift across variants |
 | `/api/samples` | `GET` | Returns built-in HLS, DASH, and MP4 test streams |
 | `/api/proxy` | `GET` | CORS streaming proxy for testing external manifest URLs |
 

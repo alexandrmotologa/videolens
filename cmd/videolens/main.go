@@ -28,13 +28,39 @@ func main() {
 		}
 
 	case "check":
-		if len(os.Args) < 3 {
-			fmt.Fprintln(os.Stderr, "Usage: videolens check <url-or-file>")
+		checkCmd := flag.NewFlagSet("check", flag.ExitOnError)
+		formatFlag := checkCmd.String("format", "text", "Output format: text, json")
+		failOnFlag := checkCmd.String("fail-on", "", "Exit with failure code on: error, warning")
+		_ = checkCmd.Parse(os.Args[2:])
+
+		args := checkCmd.Args()
+		if len(args) < 1 {
+			fmt.Fprintln(os.Stderr, "Usage: videolens check <url-or-file> [--format json] [--fail-on error]")
 			os.Exit(1)
 		}
-		target := os.Args[2]
-		if err := cli.RunCheck(target); err != nil {
-			fmt.Fprintf(os.Stderr, "Check failed: %v\n", err)
+		target := args[0]
+		opts := cli.CheckOptions{
+			Format: *formatFlag,
+			FailOn: *failOnFlag,
+		}
+		if err := cli.RunCheck(target, opts); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+
+	case "fix":
+		fixCmd := flag.NewFlagSet("fix", flag.ExitOnError)
+		outFlag := fixCmd.String("o", "", "Output sanitized M3U8 path")
+		_ = fixCmd.Parse(os.Args[2:])
+
+		args := fixCmd.Args()
+		if len(args) < 1 {
+			fmt.Fprintln(os.Stderr, "Usage: videolens fix <input.m3u8> [-o <fixed.m3u8>]")
+			os.Exit(1)
+		}
+		inputFile := args[0]
+		if err := cli.RunFix(inputFile, *outFlag); err != nil {
+			fmt.Fprintf(os.Stderr, "Fix failed: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -73,7 +99,7 @@ func main() {
 
 	default:
 		// If argument looks like a URL or file, run check by default
-		if err := cli.RunCheck(command); err != nil {
+		if err := cli.RunCheck(command, cli.CheckOptions{Format: "text"}); err != nil {
 			fmt.Fprintf(os.Stderr, "Unknown command or check failed: %v\n", err)
 			printUsage()
 			os.Exit(1)
@@ -85,16 +111,18 @@ func printUsage() {
 	fmt.Println(`VideoLens: Streaming Media Diagnostics Workbench & MP4 Box Profiler
 
 Usage:
-  videolens serve [--port 8850]                    Start embedded web studio server
-  videolens check <url-or-file>                    Inspect HLS, DASH, or MP4 container
-  videolens faststart <input.mp4> [-o <out.mp4>]   Relocate moov atom to head of MP4
-  videolens abr <master-playlist>                  Audit ABR ladder and Bits Per Pixel
-  videolens version                                Show version
+  videolens serve [--port 8850]                     Start embedded web studio server
+  videolens check <url-or-file> [--format json]     Inspect HLS, DASH, or MP4 container
+  videolens fix <input.m3u8> [-o <out.m3u8>]        Auto-remediate HLS target duration & tags
+  videolens faststart <input.mp4> [-o <out.mp4>]    Relocate moov atom to head of MP4
+  videolens abr <master-playlist>                   Audit ABR ladder and Bits Per Pixel
+  videolens version                                 Show version
 
 Examples:
   videolens serve --port 8850
-  videolens check https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
-  videolens check video.mp4
+  videolens check https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8 --format json
+  videolens check broken.m3u8 --fail-on error
+  videolens fix broken.m3u8 -o compliant.m3u8
   videolens faststart raw_capture.mp4 -o web_ready.mp4
   videolens abr master.m3u8`)
 }

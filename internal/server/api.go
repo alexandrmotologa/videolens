@@ -31,10 +31,12 @@ type LadderAnalyzeRequest struct {
 func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/proxy", HandleProxy)
 	mux.HandleFunc("/api/hls/lint", handleHLSLint)
+	mux.HandleFunc("/api/hls/fix", handleHLSFix)
 	mux.HandleFunc("/api/dash/lint", handleDASHLint)
 	mux.HandleFunc("/api/mp4/inspect", handleMP4Inspect)
 	mux.HandleFunc("/api/mp4/remediate", handleMP4Remediate)
 	mux.HandleFunc("/api/ladder/analyze", handleLadderAnalyze)
+	mux.HandleFunc("/api/ladder/align", handleLadderAlign)
 	mux.HandleFunc("/api/samples", handleSamples)
 }
 
@@ -100,6 +102,69 @@ func handleHLSLint(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(combined)
+}
+
+func handleHLSFix(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"POST required"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req LintRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"invalid JSON: %v"}`, err), http.StatusBadRequest)
+		return
+	}
+
+	content := req.Content
+	if req.URL != "" && strings.TrimSpace(content) == "" {
+		fetched, err := fetchURL(req.URL)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error":"fetch failed: %v"}`, err), http.StatusBadGateway)
+			return
+		}
+		content = fetched
+	}
+
+	fixResult, err := hls.FixMediaPlaylist(content)
+	if err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"fix failed: %v"}`, err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fixResult)
+}
+
+func handleLadderAlign(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"POST required"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	type AlignRequest struct {
+		Variants []ladder.VariantTrack `json:"variants"`
+	}
+
+	var req AlignRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"invalid JSON: %v"}`, err), http.StatusBadRequest)
+		return
+	}
+
+	matrix := ladder.CompareVariantAlignment(req.Variants)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(matrix)
 }
 
 func handleDASHLint(w http.ResponseWriter, r *http.Request) {

@@ -47,6 +47,9 @@ type HLSLintResult struct {
 	DiscontinuityCount int              `json:"discontinuityCount"`
 	PlaylistType       string           `json:"playlistType,omitempty"`
 	HasEndList         bool             `json:"hasEndList"`
+	IsLowLatency       bool             `json:"isLowLatency"`
+	PartTarget         float64          `json:"partTarget,omitempty"`
+	TotalPartsCount    int              `json:"totalPartsCount,omitempty"`
 	DurationMetrics    *DurationMetrics `json:"durationMetrics,omitempty"`
 	Variants           []VariantStream  `json:"variants,omitempty"`
 	Renditions         []MediaRendition `json:"renditions,omitempty"`
@@ -179,18 +182,48 @@ func lintMediaPlaylist(content string) (*HLSLintResult, error) {
 	}
 
 	result := &HLSLintResult{
-		IsMaster:       false,
-		Version:        media.Version,
-		TargetDuration: media.TargetDuration,
-		MediaSequence:  media.MediaSequence,
-		PlaylistType:   media.PlaylistType,
-		HasEndList:     media.HasEndList,
-		TotalDuration:  media.TotalDuration,
-		SegmentCount:   len(media.Segments),
-		Segments:       media.Segments,
-		RawLines:       media.RawLines,
-		Issues:         make([]LintIssue, 0),
-		HealthScore:    100,
+		IsMaster:        false,
+		Version:         media.Version,
+		TargetDuration:  media.TargetDuration,
+		MediaSequence:   media.MediaSequence,
+		PlaylistType:    media.PlaylistType,
+		HasEndList:      media.HasEndList,
+		IsLowLatency:    media.IsLowLatency,
+		PartTarget:      media.PartTarget,
+		TotalPartsCount: media.TotalPartsCount,
+		TotalDuration:   media.TotalDuration,
+		SegmentCount:    len(media.Segments),
+		Segments:        media.Segments,
+		RawLines:        media.RawLines,
+		Issues:          make([]LintIssue, 0),
+		HealthScore:     100,
+	}
+
+	// Rule: LL-HLS checks
+	if media.IsLowLatency {
+		if media.PartTarget <= 0 {
+			result.Issues = append(result.Issues, LintIssue{
+				Code:           "ERR_MISSING_PART_TARGET",
+				Severity:       SeverityError,
+				Line:           1,
+				Message:        "Low-Latency HLS playlist contains partial segments (#EXT-X-PART) but lacks mandatory #EXT-X-PART-INF:PART-TARGET.",
+				Recommendation: "Declare #EXT-X-PART-INF:PART-TARGET with the maximum part duration in seconds.",
+			})
+		} else {
+			for _, seg := range media.Segments {
+				for _, part := range seg.Parts {
+					if part.Duration > media.PartTarget+0.05 {
+						result.Issues = append(result.Issues, LintIssue{
+							Code:           "ERR_PART_TARGET_EXCEEDED",
+							Severity:       SeverityError,
+							Line:           part.LineNumber,
+							Message:        fmt.Sprintf("Partial segment duration (%.3fs) exceeds PART-TARGET (%.2fs).", part.Duration, media.PartTarget),
+							Recommendation: "Reduce low-latency chunk generation interval on the encoder.",
+						})
+					}
+				}
+			}
+		}
 	}
 
 	if media.TargetDuration <= 0 {

@@ -85,4 +85,15 @@ func TestParseNotFastStartAndRemediate(t *testing.T) {
 	if remProfile.Tracks[0].Width != 1920 || remProfile.Tracks[0].Height != 1080 {
 		t.Errorf("expected 1920x1080, got %.0fx%.0f", remProfile.Tracks[0].Width, remProfile.Tracks[0].Height)
 	}
+
+	// Verify GOP Cadence is populated
+	if remProfile.Tracks[0].GOP == nil {
+		t.Fatal("expected GOP profile to be populated")
+	}
+	if remProfile.Tracks[0].GOP.CadenceType != "FIXED" {
+		t.Errorf("expected FIXED GOP, got %s", remProfile.Tracks[0].GOP.CadenceType)
+	}
+	if remProfile.Tracks[0].GOP.TotalKeyframes != 5 {
+		t.Errorf("expected 5 keyframes, got %d", remProfile.Tracks[0].GOP.TotalKeyframes)
+	}
 }

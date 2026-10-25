@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { HLSLintResult, LintIssue } from '../types/media'
+import { HLSLintResult, LintIssue, FixResult } from '../types/media'
 import {
   AlertTriangle,
   XCircle,
@@ -11,16 +11,24 @@ import {
   ArrowRight,
   Filter,
   Flame,
+  Wrench,
+  Download,
+  FileDown,
+  Sparkles,
+  Zap,
 } from 'lucide-react'
 
 interface ManifestLinterProps {
   result: HLSLintResult
   onInspectVariant?: (uri: string) => void
+  onFixApplied?: (fixedContent: string) => void
 }
 
-export const ManifestLinter: React.FC<ManifestLinterProps> = ({ result, onInspectVariant }) => {
+export const ManifestLinter: React.FC<ManifestLinterProps> = ({ result, onInspectVariant, onFixApplied }) => {
   const [filterSeverity, setFilterSeverity] = useState<'ALL' | 'ERROR' | 'WARNING'>('ALL')
   const [selectedLine, setSelectedLine] = useState<number | null>(null)
+  const [isFixing, setIsFixing] = useState(false)
+  const [fixResult, setFixResult] = useState<FixResult | null>(null)
 
   const filteredIssues = result.issues.filter((issue) => {
     if (filterSeverity === 'ALL') return true
@@ -35,11 +43,96 @@ export const ManifestLinter: React.FC<ManifestLinterProps> = ({ result, onInspec
     issuesByLine.set(issue.line, list)
   }
 
+  const handleAutoFix = async () => {
+    setIsFixing(true)
+    try {
+      const res = await fetch('/api/hls/fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: result.rawLines.join('\n') }),
+      })
+      const data: FixResult = await res.json()
+      setFixResult(data)
+      if (onFixApplied && data.sanitizedContent) {
+        onFixApplied(data.sanitizedContent)
+      }
+    } finally {
+      setIsFixing(false)
+    }
+  }
+
+  const handleDownloadSanitized = () => {
+    if (!fixResult) return
+    const blob = new Blob([fixResult.sanitizedContent], { type: 'application/vnd.apple.mpegurl' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'sanitized_compliant.m3u8'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportJSON = () => {
+    const report = {
+      timestamp: new Date().toISOString(),
+      reportType: 'VideoLens Manifest Audit',
+      healthScore: result.healthScore,
+      isMaster: result.isMaster,
+      isLowLatency: result.isLowLatency,
+      targetDuration: result.targetDuration,
+      segmentCount: result.segmentCount,
+      durationMetrics: result.durationMetrics,
+      issues: result.issues,
+    }
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `videolens_audit_${Date.now()}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportMarkdown = () => {
+    let md = `# VideoLens Manifest Audit Report\n\n`
+    md += `- **Date**: ${new Date().toLocaleString()}\n`
+    md += `- **Health Score**: ${result.healthScore}/100\n`
+    md += `- **Type**: ${result.isMaster ? 'Master Playlist' : 'Media Playlist'}\n`
+    if (result.targetDuration) md += `- **Target Duration**: ${result.targetDuration}s\n`
+    if (result.segmentCount) md += `- **Segments**: ${result.segmentCount}\n`
+    if (result.durationMetrics) {
+      md += `- **Drift**: ${result.durationMetrics.driftPercent.toFixed(1)}% (StdDev: ${result.durationMetrics.stdDev.toFixed(2)}s)\n`
+    }
+    md += `\n## Findings (${result.issues.length})\n\n`
+    if (result.issues.length === 0) {
+      md += `✓ No violations found. Compliant with RFC 8216.\n`
+    } else {
+      for (const i of result.issues) {
+        md += `- **[${i.severity}] Line ${i.line} (${i.code})**: ${i.message}\n`
+        if (i.recommendation) md += `  - *Recommendation*: ${i.recommendation}\n`
+      }
+    }
+    const blob = new Blob([md], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `videolens_audit_${Date.now()}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const getTagColor = (line: string) => {
     if (line.startsWith('#EXT-X-STREAM-INF')) return 'text-purple-400 font-semibold'
     if (line.startsWith('#EXT-X-MEDIA')) return 'text-violet-400'
     if (line.startsWith('#EXT-X-TARGETDURATION')) return 'text-amber-400 font-semibold'
     if (line.startsWith('#EXT-X-DISCONTINUITY')) return 'text-rose-400 font-bold bg-rose-500/10 px-1 rounded'
+    if (line.startsWith('#EXT-X-PART')) return 'text-emerald-400 font-medium'
     if (line.startsWith('#EXTINF')) return 'text-sky-400'
     if (line.startsWith('#EXT-X-ENDLIST')) return 'text-emerald-400 font-bold'
     if (line.startsWith('#EXT')) return 'text-slate-300'
@@ -49,6 +142,89 @@ export const ManifestLinter: React.FC<ManifestLinterProps> = ({ result, onInspec
 
   return (
     <div className="space-y-6">
+      {/* Top Action Toolbar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 gap-3">
+        <div className="flex items-center space-x-2.5">
+          <span className="text-xs font-semibold text-white">Diagnostics & Remediations</span>
+          {result.isLowLatency && (
+            <span className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <Zap className="w-3.5 h-3.5" />
+              <span>LL-HLS Active</span>
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-2.5 w-full sm:w-auto">
+          {/* Export Report Buttons */}
+          <button
+            onClick={handleExportJSON}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+          >
+            <FileDown className="w-3.5 h-3.5 text-sky-400" />
+            <span>Export JSON</span>
+          </button>
+
+          <button
+            onClick={handleExportMarkdown}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+          >
+            <FileDown className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Export MD</span>
+          </button>
+
+          {/* 1-Click Auto-Fix Button (if media playlist with issues) */}
+          {!result.isMaster && result.issues.length > 0 && (
+            <button
+              onClick={handleAutoFix}
+              disabled={isFixing}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-sm shadow-sky-500/20 transition-all cursor-pointer"
+            >
+              <Wrench className="w-3.5 h-3.5" />
+              <span>{isFixing ? 'Sanitizing...' : '1-Click Auto-Fix M3U8'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Auto-Fix Outcome Banner */}
+      {fixResult && (
+        <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-4 transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start space-x-3">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mt-0.5">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h4 className="text-sm font-semibold text-white">
+                    Manifest Sanitized Successfully
+                  </h4>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    Score: {fixResult.originalScore} → {fixResult.sanitizedScore}/100
+                  </span>
+                </div>
+                <div className="mt-1.5 space-y-1">
+                  {fixResult.fixesApplied.map((f, i) => (
+                    <div key={i} className="text-xs text-slate-300 flex items-center space-x-1.5">
+                      <span className="text-emerald-400 font-bold">&bull;</span>
+                      <span>{f.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleDownloadSanitized}
+              className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors shrink-0 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Sanitized .m3u8</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Overview Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
@@ -135,7 +311,7 @@ export const ManifestLinter: React.FC<ManifestLinterProps> = ({ result, onInspec
         </div>
       </div>
 
-      {/* Segment Durations Waterfall (if media playlist) */}
+      {/* Segment Durations Waterfall */}
       {!result.isMaster && result.segments && result.segments.length > 0 && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">

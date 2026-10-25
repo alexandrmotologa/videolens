@@ -21,18 +21,19 @@ type BoxNode struct {
 
 // TrackSummary summarizes detected video or audio track properties.
 type TrackSummary struct {
-	TrackID         uint32  `json:"trackId"`
-	Type            string  `json:"type"` // "video", "audio", "hint", "meta", "unknown"
-	Codec           string  `json:"codec"`
-	DurationSeconds float64 `json:"durationSeconds"`
-	Timescale       uint32  `json:"timescale"`
-	Width           float64 `json:"width,omitempty"`
-	Height          float64 `json:"height,omitempty"`
-	SampleRate      uint32  `json:"sampleRate,omitempty"`
-	Channels        uint16  `json:"channels,omitempty"`
-	KeyframeCount   int     `json:"keyframeCount,omitempty"`
-	TotalFrames     int     `json:"totalFrames,omitempty"`
-	AvgKeyframeSec  float64 `json:"avgKeyframeSec,omitempty"`
+	TrackID         uint32      `json:"trackId"`
+	Type            string      `json:"type"` // "video", "audio", "hint", "meta", "unknown"
+	Codec           string      `json:"codec"`
+	DurationSeconds float64     `json:"durationSeconds"`
+	Timescale       uint32      `json:"timescale"`
+	Width           float64     `json:"width,omitempty"`
+	Height          float64     `json:"height,omitempty"`
+	SampleRate      uint32      `json:"sampleRate,omitempty"`
+	Channels        uint16      `json:"channels,omitempty"`
+	KeyframeCount   int         `json:"keyframeCount,omitempty"`
+	TotalFrames     int         `json:"totalFrames,omitempty"`
+	AvgKeyframeSec  float64     `json:"avgKeyframeSec,omitempty"`
+	GOP             *GOPProfile `json:"gop,omitempty"`
 }
 
 // MP4Profile represents the complete diagnostic profile of an MP4 file.
@@ -351,6 +352,12 @@ func parseLeafBox(r io.ReaderAt, header *BoxHeader, node *BoxNode, profile *MP4P
 		if len(buf) >= 8 {
 			entryCount := binary.BigEndian.Uint32(buf[4:8])
 			node.Details["keyframeCount"] = entryCount
+			var keyframes []uint32
+			for i := 0; i < int(entryCount) && 8+i*4+4 <= len(buf); i++ {
+				kf := binary.BigEndian.Uint32(buf[8+i*4 : 8+i*4+4])
+				keyframes = append(keyframes, kf)
+			}
+			node.Details["keyframes"] = keyframes
 		}
 
 	case "stsz":
@@ -371,6 +378,62 @@ func parseLeafBox(r io.ReaderAt, header *BoxHeader, node *BoxNode, profile *MP4P
 		if len(buf) >= 8 {
 			entryCount := binary.BigEndian.Uint32(buf[4:8])
 			node.Details["chunkCount64"] = entryCount
+		}
+
+	case "mfhd":
+		if len(buf) >= 8 {
+			seqNumber := binary.BigEndian.Uint32(buf[4:8])
+			node.Details["sequenceNumber"] = seqNumber
+		}
+
+	case "tfhd":
+		if len(buf) >= 8 {
+			trackID := binary.BigEndian.Uint32(buf[4:8])
+			node.Details["trackId"] = trackID
+		}
+
+	case "tfdt":
+		if len(buf) >= 8 {
+			version := buf[0]
+			var decodeTime uint64
+			if version == 1 && len(buf) >= 12 {
+				decodeTime = binary.BigEndian.Uint64(buf[4:12])
+			} else if len(buf) >= 8 {
+				decodeTime = uint64(binary.BigEndian.Uint32(buf[4:8]))
+			}
+			node.Details["baseMediaDecodeTime"] = decodeTime
+		}
+
+	case "trun":
+		if len(buf) >= 8 {
+			sampleCount := binary.BigEndian.Uint32(buf[4:8])
+			node.Details["sampleCount"] = sampleCount
+		}
+
+	case "sidx":
+		if len(buf) >= 16 {
+			version := buf[0]
+			refID := binary.BigEndian.Uint32(buf[4:8])
+			timescale := binary.BigEndian.Uint32(buf[8:12])
+			var earliestTime uint64
+			cursor := 12
+			if version == 1 && len(buf) >= 28 {
+				earliestTime = binary.BigEndian.Uint64(buf[cursor : cursor+8])
+				cursor += 16
+			} else if len(buf) >= 20 {
+				earliestTime = uint64(binary.BigEndian.Uint32(buf[cursor : cursor+4]))
+				cursor += 8
+			}
+			node.Details["referenceId"] = refID
+			node.Details["timescale"] = timescale
+			node.Details["earliestPresentationTime"] = earliestTime
+			if timescale > 0 {
+				node.Details["earliestPresentationSec"] = float64(earliestTime) / float64(timescale)
+			}
+			if cursor+4 <= len(buf) {
+				refCount := binary.BigEndian.Uint16(buf[cursor+2 : cursor+4])
+				node.Details["referenceCount"] = refCount
+			}
 		}
 	}
 }
@@ -394,6 +457,8 @@ func parseTrackSummary(trakNode *BoxNode) TrackSummary {
 		Type:  "unknown",
 		Codec: "unknown",
 	}
+
+	var trackKeyframes []uint32
 
 	findBoxes(trakNode, func(node *BoxNode) {
 		switch node.Type {
@@ -451,6 +516,9 @@ func parseTrackSummary(trakNode *BoxNode) TrackSummary {
 			if kf, ok := node.Details["keyframeCount"].(uint32); ok {
 				track.KeyframeCount = int(kf)
 			}
+			if kfs, ok := node.Details["keyframes"].([]uint32); ok {
+				trackKeyframes = kfs
+			}
 
 		case "stsz":
 			if sc, ok := node.Details["sampleCount"].(uint32); ok {
@@ -461,6 +529,10 @@ func parseTrackSummary(trakNode *BoxNode) TrackSummary {
 
 	if track.KeyframeCount > 0 && track.DurationSeconds > 0 {
 		track.AvgKeyframeSec = track.DurationSeconds / float64(track.KeyframeCount)
+	}
+
+	if len(trackKeyframes) > 0 && track.Type == "video" {
+		track.GOP = AnalyzeGOPCadence(trackKeyframes, track.TotalFrames, track.Timescale, 0)
 	}
 
 	return track

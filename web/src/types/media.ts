@@ -10,6 +10,27 @@ export interface BoxNode {
   details?: Record<string, any>
 }
 
+export interface GOPInterval {
+  index: number
+  startFrame: number
+  durationFrames: number
+  durationSeconds: number
+  startSeconds: number
+}
+
+export interface GOPProfile {
+  totalKeyframes: number
+  totalFrames: number
+  cadenceType: 'FIXED' | 'VARIABLE' | 'SINGLE_KEYFRAME'
+  meanGOPDuration: number
+  minGOPDuration: number
+  maxGOPDuration: number
+  isFixedGOP: boolean
+  spikeCount: number
+  intervals: GOPInterval[]
+  recommendation: string
+}
+
 export interface TrackSummary {
   trackId: number
   type: 'video' | 'audio' | 'hint' | 'meta' | 'unknown'
@@ -23,6 +44,7 @@ export interface TrackSummary {
   keyframeCount?: number
   totalFrames?: number
   avgKeyframeSec?: number
+  gop?: GOPProfile
 }
 
 export interface FastStartStatus {
@@ -92,6 +114,15 @@ export interface MediaRendition {
   lineNumber: number
 }
 
+export interface PartialSegment {
+  index: number
+  duration: number
+  uri: string
+  independent: boolean
+  byteRange?: string
+  lineNumber: number
+}
+
 export interface Segment {
   index: number
   duration: number
@@ -104,6 +135,7 @@ export interface Segment {
   programDateTime?: string
   keyMethod?: string
   keyUri?: string
+  parts?: PartialSegment[]
 }
 
 export interface HLSLintResult {
@@ -116,6 +148,9 @@ export interface HLSLintResult {
   discontinuityCount: number
   playlistType?: string
   hasEndList: boolean
+  isLowLatency?: boolean
+  partTarget?: number
+  totalPartsCount?: number
   durationMetrics?: DurationMetrics
   variants?: VariantStream[]
   renditions?: MediaRendition[]
@@ -124,6 +159,67 @@ export interface HLSLintResult {
   issues: LintIssue[]
   healthScore: number
   ladder?: LadderAnalysis
+}
+
+export interface FixAction {
+  code: string
+  description: string
+}
+
+export interface FixResult {
+  originalContent: string
+  sanitizedContent: string
+  fixesApplied: FixAction[]
+  originalScore: number
+  sanitizedScore: number
+}
+
+export interface DeviceCompatibility {
+  codecString: string
+  profileName: string
+  levelNumber: number
+  ios: boolean
+  android: boolean
+  smartTv: boolean
+  roku: boolean
+  desktopWeb: boolean
+  legacyMobile: boolean
+  notes: string[]
+}
+
+export interface AlignmentSegment {
+  index: number
+  duration: number
+  pts: number
+}
+
+export interface VariantTrack {
+  id: string
+  resolution?: string
+  bitrate?: number
+  bandwidth?: number
+  segments: AlignmentSegment[]
+}
+
+export interface AlignmentDiscrepancy {
+  segmentIndex: number
+  variantA: string
+  variantB: string
+  ptsA: number
+  ptsB: number
+  driftMs: number
+  severity: string
+  message: string
+}
+
+export interface AlignmentMatrix {
+  variantCount: number
+  segmentCount: number
+  aligned: boolean
+  maxDriftMs: number
+  score: number
+  discrepancies: AlignmentDiscrepancy[]
+  summary: string
 }
 
 export interface DASHRepresentation {
@@ -173,6 +269,7 @@ export interface LadderRung {
   stepRatio: number
   bppStatus: 'OPTIMAL' | 'STARVED' | 'SATURATED'
   evaluation: string
+  compatibility?: DeviceCompatibility
 }
 
 export interface LadderAnalysis {

@@ -20,8 +20,9 @@ type LadderRung struct {
 	CodecFamily  string  `json:"codecFamily"`  // "H264", "HEVC", "VP9", "AV1", "OTHER"
 	BitsPerPixel float64 `json:"bitsPerPixel"` // BPP
 	StepRatio    float64 `json:"stepRatio"`    // Ratio vs previous lower rung
-	BPPStatus    string  `json:"bppStatus"`    // "OPTIMAL", "STARVED", "SATURATED"
-	Evaluation   string  `json:"evaluation"`
+	BPPStatus     string               `json:"bppStatus"`    // "OPTIMAL", "STARVED", "SATURATED"
+	Evaluation    string               `json:"evaluation"`
+	Compatibility *DeviceCompatibility `json:"compatibility,omitempty"`
 }
 
 // LadderIssue represents a defect or optimization finding in the bitrate ladder.
@@ -169,6 +170,7 @@ func AnalyzeLadder(inputRungs []LadderRung) *LadderAnalysis {
 		r.CodecFamily = DetectCodecFamily(r.Codec)
 		r.BitsPerPixel = CalculateBPP(r.Bitrate, r.Width, r.Height, r.FPS)
 		r.BPPStatus, r.Evaluation = EvaluateBPP(r.BitsPerPixel, r.CodecFamily)
+		r.Compatibility = EvaluateCodecCompatibility(r.Codec)
 
 		if i > 0 && rungs[i-1].Bitrate > 0 {
 			r.StepRatio = float64(r.Bitrate) / float64(rungs[i-1].Bitrate)
